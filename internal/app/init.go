@@ -7,7 +7,7 @@ import (
 func NewApp(app *cli.App) {
 	*app = cli.App{
 		Name:    "aliyun-acme-hook",
-		Version: "v1.0.0",
+		Version: "v1.1.0",
 		Usage:   "aliyun acme deploy hook",
 		Flags: []cli.Flag{
 			&cli.StringFlag{

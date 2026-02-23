@@ -12,18 +12,19 @@ import (
 	"github.com/alibabacloud-go/tea/tea"
 
 	"github.com/bububa/aliyun-acme-hook/config"
+	"github.com/bububa/aliyun-acme-hook/internal/model"
 )
 
-func Upload(ctx context.Context, cfg *config.AliyunConfig) (int64, error) {
+func Upload(ctx context.Context, cfg *config.AliyunConfig, cert *model.Cert) error {
 	// 1. 获取 acme.sh 提供的环境变量
 	// acme.sh 会在执行 hook 时自动 export 这些路径
 	// certPath := os.Getenv("CERT_PATH")
 	keyPath := os.Getenv("CERT_KEY_PATH")
 	fullChainPath := os.Getenv("FULLCHAIN_PATH")
-	domain := os.Getenv("CERT_DOMAIN") // acme.sh 传入的主域名
+	cert.Domain = os.Getenv("CERT_DOMAIN") // acme.sh 传入的主域名
 
 	if fullChainPath == "" || keyPath == "" {
-		return 0, errors.New("missing certificate path environment variables")
+		return errors.New("missing certificate path environment variables")
 	}
 
 	// 2. 读取证书内容
@@ -35,13 +36,14 @@ func Upload(ctx context.Context, cfg *config.AliyunConfig) (int64, error) {
 	config := &openapi.Config{
 		AccessKeyId:     tea.String(cfg.AK),
 		AccessKeySecret: tea.String(cfg.SK),
-		Endpoint:        tea.String(cfg.Region),
+		RegionId:        tea.String(cfg.Region),
 	}
 	client, _ := cas.NewClient(config)
 
+	cert.Name = cert.Domain + "-" + time.Now().Format("20060102150405")
 	// 4. 构建上传请求
 	uploadRequest := &cas.UploadUserCertificateRequest{
-		Name: tea.String(domain + "-" + time.Now().Format("20060102")), // 证书显示名称
+		Name: tea.String(cert.Name), // 证书显示名称
 		Cert: tea.String(string(certContent)),
 		Key:  tea.String(string(keyContent)),
 	}
@@ -49,8 +51,8 @@ func Upload(ctx context.Context, cfg *config.AliyunConfig) (int64, error) {
 	// 5. 执行上传
 	result, err := client.UploadUserCertificate(uploadRequest)
 	if err != nil {
-		return 0, fmt.Errorf("upload cert to CAS failed: %w", err)
+		return fmt.Errorf("upload cert to CAS failed: %w", err)
 	}
-
-	return *result.Body.CertId, nil
+	cert.ID = *result.Body.CertId
+	return nil
 }

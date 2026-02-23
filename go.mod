@@ -4,7 +4,9 @@ go 1.25.0
 
 require (
 	github.com/alibabacloud-go/cas-20200407/v4 v4.1.0
+	github.com/alibabacloud-go/cdn-20180510/v9 v9.0.0
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.1.15
+	github.com/alibabacloud-go/slb-20140515/v4 v4.0.13
 	github.com/alibabacloud-go/tea v1.4.0
 	github.com/jinzhu/configor v1.2.2
 	github.com/urfave/cli/v2 v2.27.7
