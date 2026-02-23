@@ -7,6 +7,8 @@ type Config struct {
 type Account struct {
 	Name string        `required:"true"`
 	CAS  *AliyunConfig `required:"true"`
+	CDN  *AliyunConfig
+	SLB  *AliyunConfig
 }
 
 type AliyunConfig struct {
