@@ -3,6 +3,7 @@ package slb
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	slb "github.com/alibabacloud-go/slb-20140515/v4/client"
@@ -12,6 +13,7 @@ import (
 type LSBListner struct {
 	LoadBalancerID    string
 	DomainExtensionID string
+	ListenerPort      int32
 }
 
 func List(ctx context.Context, clt *slb.Client, domain string) ([]LSBListner, error) {
@@ -61,7 +63,7 @@ func List(ctx context.Context, clt *slb.Client, domain string) ([]LSBListner, er
 	return ret, nil
 }
 
-func checkSLB(_ context.Context, clt *slb.Client, instanceID string, domain string) ([]LSBListner, error) {
+func checkSLB(ctx context.Context, clt *slb.Client, instanceID string, domain string) ([]LSBListner, error) {
 	attrReq := slb.DescribeLoadBalancerAttributeRequest{
 		LoadBalancerId: tea.String(instanceID),
 	}
@@ -69,35 +71,60 @@ func checkSLB(_ context.Context, clt *slb.Client, instanceID string, domain stri
 	if err != nil {
 		return nil, fmt.Errorf("get SLB instance attribute failed, %w", err)
 	}
-	if attrResp.Body == nil || attrResp.Body.ListenerPortsAndProtocal != nil {
+	if attrResp.Body == nil || attrResp.Body.ListenerPortsAndProtocal == nil {
 		return nil, nil
 	}
 	listners := make([]LSBListner, 0, len(attrResp.Body.ListenerPortsAndProtocal.ListenerPortAndProtocal))
 	for _, p := range attrResp.Body.ListenerPortsAndProtocal.ListenerPortAndProtocal {
 		if protocal := p.ListenerProtocal; protocal != nil && *protocal == "https" && p.ListenerPort != nil {
 			domainReq := slb.DescribeDomainExtensionsRequest{
-				LoadBalancerId: tea.String(instanceID),
+				LoadBalancerId: attrResp.Body.LoadBalancerId,
 				ListenerPort:   p.ListenerPort,
 			}
 			domainResp, err := clt.DescribeDomainExtensions(&domainReq)
 			if err != nil {
 				return nil, fmt.Errorf("get SLB instance domain extensions failed, %w", err)
 			}
-			if domainResp.Body != nil && domainResp.Body.DomainExtensions != nil {
+			if domainResp.Body != nil && domainResp.Body.DomainExtensions != nil && len(domainResp.Body.DomainExtensions.DomainExtension) > 0 {
 				for _, ext := range domainResp.Body.DomainExtensions.DomainExtension {
 					extID := ext.DomainExtensionId
 					if extID == nil {
 						continue
 					}
 					if v := ext.Domain; v != nil && strings.HasSuffix(*v, domain) {
+						slog.InfoContext(ctx, "found SLB listener", "load_balancer_id", instanceID, "port", *p.ListenerPort, "domain_extension_id", *extID, "domain", *v)
 						listners = append(listners, LSBListner{
 							LoadBalancerID:    instanceID,
 							DomainExtensionID: *extID,
+							ListenerPort:      *p.ListenerPort,
 						})
 						break
 					}
 				}
+			} else {
+				listenerDescribeReq := slb.DescribeLoadBalancerHTTPSListenerAttributeRequest{
+					LoadBalancerId: attrResp.Body.LoadBalancerId,
+					ListenerPort:   p.ListenerPort,
+				}
+				describeResp, err := clt.DescribeLoadBalancerHTTPSListenerAttribute(&listenerDescribeReq)
+				if err != nil {
+					return nil, fmt.Errorf("get SLB HTTPS listener attribute failed, %w", err)
+				}
+				if describeResp.Body != nil && describeResp.Body.Rules != nil {
+					for _, rule := range describeResp.Body.Rules.Rule {
+						if rule.Domain != nil && strings.HasSuffix(*rule.Domain, domain) {
+							slog.InfoContext(ctx, "found SLB listener", "load_balancer_id", instanceID, "port", *p.ListenerPort, "domain", *rule.Domain)
+							listners = append(listners, LSBListner{
+								LoadBalancerID: instanceID,
+								ListenerPort:   *p.ListenerPort,
+							})
+							break
+						}
+					}
+				}
 			}
+		} else {
+			slog.Info("invalid protocal", "protocal", p)
 		}
 	}
 	return listners, nil

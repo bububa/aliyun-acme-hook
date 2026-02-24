@@ -106,6 +106,7 @@ import (
 - `internal/cas/`: Alibaba Cloud CAS integration
 - `internal/cdn/`: Alibaba Cloud CDN integration
 - `internal/slb/`: Alibaba Cloud SLB integration
+- `internal/oss/`: Alibaba Cloud OSS integration
 - `internal/model/`: Data models and structures
 
 ## Dependencies

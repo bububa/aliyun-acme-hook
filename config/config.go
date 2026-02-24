@@ -5,10 +5,11 @@ type Config struct {
 }
 
 type Account struct {
-	Name string        `required:"true"`
-	CAS  *AliyunConfig `required:"true"`
+	Name string `required:"true"`
+	CAS  *AliyunConfig
 	CDN  *AliyunConfig
 	SLB  *AliyunConfig
+	OSS  *AliyunConfig
 }
 
 type AliyunConfig struct {

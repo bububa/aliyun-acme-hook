@@ -30,11 +30,13 @@ func Certificate(ctx context.Context, cfg *config.AliyunConfig, cert *model.Cert
 	if err != nil {
 		return fmt.Errorf("failed to create SLB client: %w", err)
 	}
-	req := slb.UploadServerCertificateRequest{
-		AliCloudCertificateName: tea.String(cert.Name),
-		AliCloudCertificateId:   tea.String(strconv.FormatInt(cert.ID, 10)),
+	req := new(slb.UploadServerCertificateRequest)
+	if cert.ID > 0 {
+		req.SetAliCloudCertificateName(cert.Name).SetAliCloudCertificateId(strconv.FormatInt(cert.ID, 10))
+	} else {
+		req.SetServerCertificateName(cert.Name).SetPrivateKey(string(cert.Key)).SetServerCertificate(string(cert.FullChain))
 	}
-	uploadResp, err := client.UploadServerCertificate(&req)
+	uploadResp, err := client.UploadServerCertificate(req)
 	if err != nil {
 		slog.ErrorContext(ctx, "upload LSB cert failed", "domain", cert.Domain, "error", err)
 		return fmt.Errorf("set SLB domain cert failed, %w", err)
@@ -45,13 +47,27 @@ func Certificate(ctx context.Context, cfg *config.AliyunConfig, cert *model.Cert
 		return fmt.Errorf("upload SLB domain cert failed, %w", err)
 	}
 	for _, v := range list {
-		certReq := slb.SetDomainExtensionAttributeRequest{
-			DomainExtensionId:   tea.String(v.LoadBalancerID),
+		if v.DomainExtensionID != "" {
+			certReq := slb.SetDomainExtensionAttributeRequest{
+				DomainExtensionId:   tea.String(v.DomainExtensionID),
+				ServerCertificateId: uploadResp.Body.ServerCertificateId,
+			}
+			if _, err := client.SetDomainExtensionAttribute(&certReq); err != nil {
+				slog.ErrorContext(ctx, "set LSB domain extension failed", "port", v.ListenerPort, "load_balancer_id", v.LoadBalancerID, "domain_extension_id", v.DomainExtensionID, "error", err)
+				return fmt.Errorf("set SLB domain extension cert failed, %w", err)
+			} else {
+				slog.InfoContext(ctx, "update LSB domain extension completed", "port", v.ListenerPort, "load_balancer_id", v.LoadBalancerID, "domain_extension_id", v.DomainExtensionID)
+			}
+		}
+		updateReq := slb.SetLoadBalancerHTTPSListenerAttributeRequest{
+			LoadBalancerId:      tea.String(v.LoadBalancerID),
+			ListenerPort:        tea.Int32(v.ListenerPort),
 			ServerCertificateId: uploadResp.Body.ServerCertificateId,
 		}
-		if _, err := client.SetDomainExtensionAttribute(&certReq); err != nil {
-			slog.ErrorContext(ctx, "set LSB domain extension failed", "domain", cert.Domain, "error", err)
-			return fmt.Errorf("set SLB domain extension cert failed, %w", err)
+		if _, err := client.SetLoadBalancerHTTPSListenerAttribute(&updateReq); err != nil {
+			slog.ErrorContext(ctx, "update LSB https listener failed", "port", v.ListenerPort, "load_balancer_id", v.LoadBalancerID)
+		} else {
+			slog.InfoContext(ctx, "update LSB https listener completed", "port", v.ListenerPort, "load_balancer_id", v.LoadBalancerID)
 		}
 	}
 	slog.InfoContext(ctx, "certicate SLB domain done!", "domain", cert.Domain)
