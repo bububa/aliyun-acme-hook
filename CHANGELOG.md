@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.2.0] - 2026-02-24
+
+### Added
+- ✨ Added OSS (Object Storage Service) support for SSL certificate deployment to custom domains
+- ✨ Added OSS API integration with certificate update functionality for CNAME records
+- ✨ Added conditional service deployment - services are now only deployed if configured
+- ✨ Added support for certificate deployment using certificate content when certificate ID is not available
+
+### Changed
+- ♻️ Refactored deploy logic to support conditional service deployment based on configuration
+- ♻️ Modified CAS integration to use certificate content directly instead of file paths
+- ♻️ Updated CDN integration to handle both CAS certificate IDs and certificate content
+- ♻️ Enhanced SLB integration to support both certificate ID and certificate content upload
+- ♻️ Improved error logging and success messaging throughout deployment process
+
+### Fixed
+- 🐛 Fixed missing nil checks that could cause panic if service configurations are not present
+- 🐛 Fixed redundant return statements in deploy function that prevented complete deployment
+- 🐛 Fixed typo in SLB logging ("htttps" corrected to "https")
+- 🐛 Fixed typo in CDN logging ("certicating" corrected to "certifying")
+
 ## [v1.1.0] - 2026-02-23
 
 ### Added
@@ -21,8 +42,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - 🐛 Fixed typo in error messages to ensure accurate debugging information
 - 🐛 Implemented proper error handling for Alibaba Cloud client initialization to prevent potential panics
-- 🐛 Fixed redundant export statements in deployment script example
-- 🐛 Corrected RegionId parameter usage in CAS integration
+Unique failure occurred: oldString not found in content
 
 ## [v1.0.0] - 2026-02-23
 

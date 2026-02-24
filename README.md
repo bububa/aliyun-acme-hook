@@ -36,6 +36,11 @@ Region="cn-zhangjiakou"        # Specify your region
 AK="YOUR_ACCESS_KEY_HERE"      # Replace with your actual access key
 SK="YOUR_SECRET_KEY_HERE"      # Replace with your actual secret key
 Region="cn-zhangjiakou"        # Specify your region
+
+[Accounts.OSS]
+AK="YOUR_ACCESS_KEY_HERE"      # Replace with your actual access key
+SK="YOUR_SECRET_KEY_HERE"      # Replace with your actual secret key
+Region="cn-zhangjiakou"        # Specify your region
 ```
 
 ⚠️ **Security Warning**: Never commit real credentials to version control. Store this file securely with appropriate permissions (e.g., `chmod 600 /etc/aliyun-acme-hook.toml`).
@@ -116,6 +121,7 @@ This hook supports deploying certificates to:
 - **CAS** (Certificate Authority Service): Primary certificate storage
 - **CDN**: Content Delivery Network SSL certificates  
 - **SLB**: Server Load Balancer SSL certificates
+- **OSS**: Object Storage Service SSL certificates for custom domains
 
 The service will automatically determine which services to deploy to based on your configuration file.
 ```

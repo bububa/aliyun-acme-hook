@@ -35,14 +35,17 @@ func Certificate(ctx context.Context, cfg *config.AliyunConfig, cert *model.Cert
 	}
 	for _, domain := range domains {
 		slog.InfoContext(ctx, "certicating CDN domain", "domain", domain)
-		certReq := cdn.SetCdnDomainSSLCertificateRequest{
+		certReq := &cdn.SetCdnDomainSSLCertificateRequest{
 			DomainName:  tea.String(domain),
 			CertName:    tea.String(cert.Name),
-			CertId:      tea.Int64(cert.ID),
-			CertType:    tea.String("cas"),
 			SSLProtocol: tea.String("on"),
 		}
-		if _, err := client.SetCdnDomainSSLCertificate(&certReq); err != nil {
+		if cert.ID > 0 {
+			certReq.SetCertId(cert.ID).SetCertType("cas")
+		} else {
+			certReq.SetSSLPri(string(cert.Key)).SetSSLPub(string(cert.FullChain))
+		}
+		if _, err := client.SetCdnDomainSSLCertificate(certReq); err != nil {
 			slog.ErrorContext(ctx, "certicate CDN domain failed", "domain", domain, "error", err)
 			return fmt.Errorf("set CDN domain cert failed, %w", err)
 		}

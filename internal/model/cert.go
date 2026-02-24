@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type Cert struct {
@@ -23,6 +24,7 @@ func (c *Cert) LoadFromEnv() error {
 	keyPath := os.Getenv("CERT_KEY_PATH")
 	fullChainPath := os.Getenv("FULLCHAIN_PATH")
 	c.Domain = os.Getenv("CERT_DOMAIN") // acme.sh 传入的主域名
+	c.Name = c.Domain + "-" + time.Now().Format("20060102150405")
 
 	if fullChainPath == "" || keyPath == "" {
 		return errors.New("missing certificate path environment variables")

@@ -18,6 +18,7 @@ require (
 	github.com/alibabacloud-go/debug v1.0.1 // indirect
 	github.com/alibabacloud-go/openapi-util v0.1.1 // indirect
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.7 // indirect
+	github.com/aliyun/alibabacloud-oss-go-sdk-v2 v1.4.0 // indirect
 	github.com/aliyun/credentials-go v1.4.7 // indirect
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
@@ -31,6 +32,7 @@ require (
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	golang.org/x/net v0.50.0 // indirect
+	golang.org/x/time v0.14.0 // indirect
 	gopkg.in/ini.v1 v1.67.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
