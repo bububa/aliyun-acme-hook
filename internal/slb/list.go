@@ -16,7 +16,7 @@ type LSBListner struct {
 	ListenerPort      int32
 }
 
-func List(ctx context.Context, clt *slb.Client, domain string) ([]LSBListner, error) {
+func List(ctx context.Context, clt *slb.Client, domain string, regionID string) ([]LSBListner, error) {
 	var (
 		pageNumber int32 = 1
 		pageSize   int32 = 100
@@ -29,6 +29,7 @@ func List(ctx context.Context, clt *slb.Client, domain string) ([]LSBListner, er
 	listReq := slb.DescribeLoadBalancersRequest{
 		LoadBalancerStatus: tea.String("active"),
 		PageSize:           tea.Int32(pageSize),
+		RegionId:           tea.String(regionID),
 	}
 	ret := make([]LSBListner, 0, pageSize)
 	for {

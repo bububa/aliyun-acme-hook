@@ -16,6 +16,7 @@ require (
 	github.com/BurntSushi/toml v1.6.0 // indirect
 	github.com/alibabacloud-go/alibabacloud-gateway-spi v0.0.5 // indirect
 	github.com/alibabacloud-go/debug v1.0.1 // indirect
+	github.com/alibabacloud-go/fc-20230330/v4 v4.6.8 // indirect
 	github.com/alibabacloud-go/openapi-util v0.1.1 // indirect
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.7 // indirect
 	github.com/aliyun/alibabacloud-oss-go-sdk-v2 v1.4.0 // indirect

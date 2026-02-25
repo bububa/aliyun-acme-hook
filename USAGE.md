@@ -1,26 +1,50 @@
-# Aliyun acme.sh deploy hook
+# Usage Guide for Aliyun ACME Hook
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/bububa/aliyun-acme-hook.svg)](https://pkg.go.dev/github.com/bububa/aliyun-acme-hook)
-[![Go](https://github.com/bububa/aliyun-acme-hook/actions/workflows/go.yml/badge.svg)](https://github.com/bububa/aliyun-acme-hook/actions/workflows/go.yml)
-[![goreleaser](https://github.com/bububa/aliyun-acme-hook/actions/workflows/goreleaser.yml/badge.svg)](https://github.com/bububa/aliyun-acme-hook/actions/workflows/goreleaser.yml)
-[![GitHub go.mod Go version of a Go module](https://img.shields.io/github/go-mod/go-version/bububa/aliyun-acme-hook.svg)](https://github.com/bububa/aliyun-acme-hook)
-[![GoReportCard](https://goreportcard.com/badge/github.com/bububa/aliyun-acme-hook)](https://goreportcard.com/report/github.com/bububa/aliyun-acme-hook)
-[![GitHub license](https://img.shields.io/github/license/bububa/aliyun-acme-hook.svg)](https://github.com/bububa/aliyun-acme-hook/blob/master/LICENSE)
-[![GitHub release](https://img.shields.io/github/release/bububa/aliyun-acme-hook.svg)](https://GitHub.com/bububa/aliyun-acme-hook/releases/)
+## Table of Contents
+- [Overview](#overview)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Integration with acme.sh](#integration-with-acmesh)
+- [Direct Usage](#direct-usage)
+- [Supported Services](#supported-services)
+- [Troubleshooting](#troubleshooting)
 
-## issue domain with acme.sh
+## Overview
 
+Aliyun ACME Hook is a Go-based application that serves as an ACME (Automatic Certificate Management Environment) hook for Alibaba Cloud services, enabling automated SSL/TLS certificate management for domains using Alibaba Cloud's CDN, SLB (Server Load Balancer), CAS (Certificate Authority Service), OSS (Object Storage Service), and FC (Function Compute).
+
+## Installation
+
+### Prerequisites
+- Go 1.25.0+ (as specified in go.mod)
+- Access to Alibaba Cloud account with appropriate permissions
+- acme.sh (for automatic certificate renewal)
+
+### Building from Source
 ```bash
-acme.sh --issue -d example.com -d *.example.com --dns dns_ali --keylength 2048
+# Clone the repository
+git clone https://github.com/bububa/aliyun-acme-hook.git
+cd aliyun-acme-hook
+
+# Build the application
+make app
+# or directly with Go
+go build -o dist/aliyun-acme-hook -ldflags="-s -w -extldflags \"-static\"" ./cmd/app
+
+# Install the binary
+sudo make all
 ```
 
-## configuration
+### Direct Binary Installation
+Download the latest release from the GitHub releases page and install to `/usr/local/bin/`.
+
+## Configuration
 
 Create `/etc/aliyun-acme-hook.toml` with your Alibaba Cloud credentials. You can configure multiple services per account:
 
 ```toml
 [[Accounts]]
-Name="my-account-name"  # Replace with your account identifier
+Name="production"  # Replace with your account identifier
 
 [Accounts.CAS]
 AK="YOUR_ACCESS_KEY_HERE"      # Replace with your actual access key
@@ -48,12 +72,27 @@ SK="YOUR_SECRET_KEY_HERE"      # Replace with your actual secret key
 Region="cn-hangzhou"           # Specify your region (FC may require different region)
 ```
 
-You can configure multiple accounts by adding additional `[[Accounts]]` sections.
-Each service (CAS, CDN, SLB, OSS, FC) is optional and will only be used if configured.
+### Configuration Options
 
+- `Name`: A descriptive name for the account configuration
+- `AK`: Alibaba Cloud Access Key ID
+- `SK`: Alibaba Cloud Access Key Secret
+- `Region`: Alibaba Cloud region for the service
+- `STSToken`: Optional STS Token for temporary credentials
+- `AccountID`: Optional Alibaba Cloud main account ID
+
+### Security Notes
 ⚠️ **Security Warning**: Never commit real credentials to version control. Store this file securely with appropriate permissions (e.g., `chmod 600 /etc/aliyun-acme-hook.toml`).
 
-## deploy script
+## Integration with acme.sh
+
+### Issue Domain Certificates
+
+```bash
+acme.sh --issue -d example.com -d *.example.com --dns dns_ali --keylength 2048
+```
+
+### Deploy Script
 
 Create `~/.acme.sh/deploy/aliyun_acme_hook.sh`:
 
@@ -74,7 +113,7 @@ aliyun_acme_hook_deploy() {
   _info "Resolved CERT_KEY_PATH: $REAL_KEY"
 
   # 3. 验证文件是否真的存在
-  if [ ! -f "$REAL_FULLCHAIN" ] || [ ! -f "$REAL_KEY" ]; then
+  if [ ! -f "$REAL_FULLCHAIN" ] || [ ! -f "$REAL_KEY" ] ; then
     _err "Critical Error: Certificate files not found in RSA directory!"
     return 1
   fi
@@ -83,11 +122,11 @@ aliyun_acme_hook_deploy() {
   export CERT_KEY_PATH="$REAL_KEY"
   export FULLCHAIN_PATH="$REAL_FULLCHAIN"
   export CERT_DOMAIN="$domain" # acme.sh 内部的主域名变量是 $domain
-  _info "Starting upload to Alibaba Cloud services (CAS, CDN, SLB)..."
+  _info "Starting upload to Alibaba Cloud services (CAS, CDN, SLB, OSS, FC)..."
 
   /usr/local/bin/aliyun-acme-hook -c /etc/aliyun-acme-hook.toml certificate
 
-  if [ $? -eq 0 ]; then
+  if [ $? -eq 0 ] ; then
     _info "Aliyun Certificate Deployment Success."
     return 0
   else
@@ -103,13 +142,13 @@ Make sure the script is executable:
 chmod +x ~/.acme.sh/deploy/aliyun_acme_hook.sh
 ```
 
-## deploy command
+### Deploy Command
 
 ```bash
 acme.sh --deploy -d example.com --deploy-hook aliyun_acme_hook
 ```
 
-## command-line usage
+## Direct Usage
 
 You can also run the tool directly to update certificates:
 
@@ -117,7 +156,7 @@ You can also run the tool directly to update certificates:
 aliyun-acme-hook -c /etc/aliyun-acme-hook.toml certificate
 ```
 
-This will:
+This command will:
 1. Load certificate information from environment variables (set by acme.sh)
 2. Upload the certificate to Alibaba Cloud CAS (Certificate Authority Service)
 3. Deploy the certificate to CDN domains if CDN configuration is present
@@ -125,18 +164,35 @@ This will:
 5. Deploy the certificate to OSS (Object Storage Service) if OSS configuration is present
 6. Deploy the certificate to FC (Function Compute) if FC configuration is present
 
-## services supported
+## Supported Services
 
 This hook supports deploying certificates to:
-- **CAS** (Certificate Authority Service): Primary certificate storage
-- **CDN**: Content Delivery Network SSL certificates  
-- **SLB**: Server Load Balancer SSL certificates
-- **OSS**: Object Storage Service SSL certificates for custom domains
-- **FC**: Function Compute custom domain SSL certificates
 
-The service will automatically determine which services to deploy to based on your configuration file.
+### CAS (Certificate Authority Service)
+Primary certificate storage in Alibaba Cloud. Certificates are uploaded here first before being distributed to other services.
 
-## troubleshooting
+### CDN (Content Delivery Network)
+SSL certificates for CDN domains are updated with the new certificate.
+
+### SLB (Server Load Balancer)
+SSL certificates for Server Load Balancer listeners are updated.
+
+### OSS (Object Storage Service)
+SSL certificates for custom domains on Object Storage Service are updated.
+
+### FC (Function Compute)
+SSL certificates for custom domains on Function Compute are updated.
+
+The service will automatically determine which services to deploy to based on your configuration file. Only services with configuration will be processed.
+
+## Environment Variables
+
+The application expects the following environment variables (typically set by acme.sh):
+- `CERT_KEY_PATH`: Path to the private key file
+- `FULLCHAIN_PATH`: Path to the full certificate chain file
+- `CERT_DOMAIN`: The domain name for the certificate
+
+## Troubleshooting
 
 ### Common Issues
 
@@ -162,4 +218,3 @@ The service will automatically determine which services to deploy to based on yo
 - Enable detailed logging by setting the `SLOG_LEVEL` environment variable to `debug`
 - Check the Alibaba Cloud console to confirm successful certificate uploads
 - Verify service-specific configurations (domain binding, listeners, etc.) are properly set up in Alibaba Cloud console
-```

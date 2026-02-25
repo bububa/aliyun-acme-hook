@@ -41,7 +41,7 @@ func Certificate(ctx context.Context, cfg *config.AliyunConfig, cert *model.Cert
 		slog.ErrorContext(ctx, "upload LSB cert failed", "domain", cert.Domain, "error", err)
 		return fmt.Errorf("set SLB domain cert failed, %w", err)
 	}
-	list, err := List(ctx, client, cert.Domain)
+	list, err := List(ctx, client, cert.Domain, cfg.Region)
 	if err != nil {
 		slog.ErrorContext(ctx, "list LSB listeners failed", "domain", cert.Domain, "error", err)
 		return fmt.Errorf("upload SLB domain cert failed, %w", err)

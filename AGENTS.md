@@ -107,7 +107,9 @@ import (
 - `internal/cdn/`: Alibaba Cloud CDN integration
 - `internal/slb/`: Alibaba Cloud SLB integration
 - `internal/oss/`: Alibaba Cloud OSS integration
+- `internal/fc/`: Alibaba Cloud Function Compute integration
 - `internal/model/`: Data models and structures
+- `internal/util/`: Utility functions
 
 ## Dependencies
 - github.com/urfave/cli/v2: CLI application framework
