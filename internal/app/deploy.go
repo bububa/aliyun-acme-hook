@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
 	"github.com/urfave/cli/v2"
@@ -18,12 +19,13 @@ import (
 
 func Deploy(c *cli.Context) error {
 	ctx := c.Context
+	var retErr error
 	for _, cfg := range service.Config().Accounts {
 		if err := AccountDeploy(ctx, &cfg); err != nil {
-			// TODO
+			retErr = errors.Join(retErr, err)
 		}
 	}
-	return nil
+	return retErr
 }
 
 func AccountDeploy(ctx context.Context, cfg *config.Account) error {

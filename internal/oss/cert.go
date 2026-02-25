@@ -30,10 +30,14 @@ func Certificate(ctx context.Context, cfg *config.AliyunConfig, cert *model.Cert
 		}
 		// Print the bucket found
 		for _, b := range page.Buckets {
+			clt := client
 			if *b.Region != cfg.Region {
-				continue
+				ossCfg := oss.LoadDefaultConfig().
+					WithCredentialsProvider(credentials.NewStaticCredentialsProvider(cfg.AK, cfg.SK)).
+					WithRegion(*b.Region)
+				clt = oss.NewClient(ossCfg)
 			}
-			if err := certCname(ctx, client, cert, *b.Name); err != nil {
+			if err := certCname(ctx, clt, cert, *b.Name); err != nil {
 				slog.ErrorContext(ctx, "certificate OSS bucket domain failed", "error", err, "bucket", *b.Name)
 				return err
 			}

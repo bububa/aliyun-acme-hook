@@ -15,12 +15,11 @@ import (
 )
 
 func Certificate(ctx context.Context, cfg *config.AliyunConfig, cert *model.Cert) error {
-	apiConfig := &openapi.Config{
-		AccessKeyId:     tea.String(cfg.AK),
-		AccessKeySecret: tea.String(cfg.SK),
-		RegionId:        tea.String(cfg.Region),
-		Endpoint:        tea.String(cfg.AccountID + "." + cfg.Region + ".fc.aliyuncs.com"),
-	}
+	apiConfig := new(openapi.Config)
+	apiConfig.SetAccessKeyId(cfg.AK)
+	apiConfig.SetAccessKeySecret(cfg.SK)
+	apiConfig.SetRegionId(cfg.Region)
+	apiConfig.SetEndpoint(cfg.AccountID + "." + cfg.Region + ".fc.aliyuncs.com")
 	client, err := fc.NewClient(apiConfig)
 	if err != nil {
 		return fmt.Errorf("failed to create FC client: %w", err)
@@ -46,14 +45,12 @@ func Certificate(ctx context.Context, cfg *config.AliyunConfig, cert *model.Cert
 			if !strings.HasSuffix(domainName, cert.Domain) {
 				continue
 			}
+			certConfig := new(fc.CertConfig)
+			certConfig.SetCertName(cert.Name).SetCertificate(string(cert.FullChain)).SetPrivateKey(string(cert.Key))
 			certReq := fc.UpdateCustomDomainRequest{
 				Body: &fc.UpdateCustomDomainInput{
-					AuthConfig: domain.AuthConfig,
-					CertConfig: &fc.CertConfig{
-						CertName:    tea.String(cert.Name),
-						Certificate: tea.String(string(cert.FullChain)),
-						PrivateKey:  tea.String(string(cert.Key)),
-					},
+					AuthConfig:  domain.AuthConfig,
+					CertConfig:  certConfig,
 					CorsConfig:  domain.CorsConfig,
 					Protocol:    domain.Protocol,
 					RouteConfig: domain.RouteConfig,
