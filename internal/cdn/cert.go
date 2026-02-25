@@ -7,7 +7,6 @@ import (
 	"log/slog"
 
 	cdn "github.com/alibabacloud-go/cdn-20180510/v9/client"
-	"github.com/alibabacloud-go/tea/tea"
 
 	"github.com/bububa/aliyun-acme-hook/config"
 	"github.com/bububa/aliyun-acme-hook/internal/model"
@@ -35,11 +34,8 @@ func Certificate(ctx context.Context, cfg *config.AliyunConfig, cert *model.Cert
 	}
 	for _, domain := range domains {
 		slog.InfoContext(ctx, "certicating CDN domain", "domain", domain)
-		certReq := &cdn.SetCdnDomainSSLCertificateRequest{
-			DomainName:  tea.String(domain),
-			CertName:    tea.String(cert.Name),
-			SSLProtocol: tea.String("on"),
-		}
+		certReq := new(cdn.SetCdnDomainSSLCertificateRequest)
+		certReq.SetDomainName(domain).SetCertName(cert.Name).SetSSLProtocol("on")
 		if cert.ID > 0 {
 			certReq.SetCertId(cert.ID).SetCertType("cas")
 		} else {

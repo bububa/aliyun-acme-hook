@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	slb "github.com/alibabacloud-go/slb-20140515/v4/client"
-	"github.com/alibabacloud-go/tea/tea"
 
 	"github.com/bububa/aliyun-acme-hook/config"
 	"github.com/bububa/aliyun-acme-hook/internal/model"
@@ -48,23 +47,20 @@ func Certificate(ctx context.Context, cfg *config.AliyunConfig, cert *model.Cert
 	}
 	for _, v := range list {
 		if v.DomainExtensionID != "" {
-			certReq := slb.SetDomainExtensionAttributeRequest{
-				DomainExtensionId:   tea.String(v.DomainExtensionID),
-				ServerCertificateId: uploadResp.Body.ServerCertificateId,
-			}
-			if _, err := client.SetDomainExtensionAttribute(&certReq); err != nil {
+			certReq := new(slb.SetDomainExtensionAttributeRequest)
+			certReq.SetDomainExtensionId(v.DomainExtensionID)
+			certReq.ServerCertificateId = uploadResp.Body.ServerCertificateId
+			if _, err := client.SetDomainExtensionAttribute(certReq); err != nil {
 				slog.ErrorContext(ctx, "set LSB domain extension failed", "port", v.ListenerPort, "load_balancer_id", v.LoadBalancerID, "domain_extension_id", v.DomainExtensionID, "error", err)
 				return fmt.Errorf("set SLB domain extension cert failed, %w", err)
 			} else {
 				slog.InfoContext(ctx, "update LSB domain extension completed", "port", v.ListenerPort, "load_balancer_id", v.LoadBalancerID, "domain_extension_id", v.DomainExtensionID)
 			}
 		}
-		updateReq := slb.SetLoadBalancerHTTPSListenerAttributeRequest{
-			LoadBalancerId:      tea.String(v.LoadBalancerID),
-			ListenerPort:        tea.Int32(v.ListenerPort),
-			ServerCertificateId: uploadResp.Body.ServerCertificateId,
-		}
-		if _, err := client.SetLoadBalancerHTTPSListenerAttribute(&updateReq); err != nil {
+		updateReq := new(slb.SetLoadBalancerHTTPSListenerAttributeRequest)
+		updateReq.SetLoadBalancerId(v.LoadBalancerID).SetListenerPort(v.ListenerPort)
+		updateReq.ServerCertificateId = uploadResp.Body.ServerCertificateId
+		if _, err := client.SetLoadBalancerHTTPSListenerAttribute(updateReq); err != nil {
 			slog.ErrorContext(ctx, "update LSB https listener failed", "port", v.ListenerPort, "load_balancer_id", v.LoadBalancerID)
 		} else {
 			slog.InfoContext(ctx, "update LSB https listener completed", "port", v.ListenerPort, "load_balancer_id", v.LoadBalancerID)

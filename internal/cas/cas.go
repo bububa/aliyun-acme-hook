@@ -6,32 +6,27 @@ import (
 	"fmt"
 
 	cas "github.com/alibabacloud-go/cas-20200407/v4/client"
-	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
-	"github.com/alibabacloud-go/tea/tea"
 
 	"github.com/bububa/aliyun-acme-hook/config"
 	"github.com/bububa/aliyun-acme-hook/internal/model"
+	"github.com/bububa/aliyun-acme-hook/internal/util"
 )
 
 func Upload(ctx context.Context, cfg *config.AliyunConfig, cert *model.Cert) error {
 	if cert.FullChain == nil || cert.Key == nil {
 		return errors.New("missing certificate path environment variables")
 	}
-
-	// 3. 初始化阿里云客户端
-	// 建议通过环境变量获取 Ali_Key 和 Ali_Secret
-	config := &openapi.Config{
-		AccessKeyId:     tea.String(cfg.AK),
-		AccessKeySecret: tea.String(cfg.SK),
-		RegionId:        tea.String(cfg.Region),
+	apiConfig, err := util.CreateOpenAPIClient(cfg.AK, cfg.SK, cfg.Region)
+	if err != nil {
+		return fmt.Errorf("failed to create CAS API config: %w", err)
 	}
-	client, _ := cas.NewClient(config)
+	client, err := cas.NewClient(apiConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create CAS client: %w", err)
+	}
 	// 4. 构建上传请求
-	uploadRequest := &cas.UploadUserCertificateRequest{
-		Name: tea.String(cert.Name), // 证书显示名称
-		Cert: tea.String(string(cert.FullChain)),
-		Key:  tea.String(string(cert.Key)),
-	}
+	uploadRequest := new(cas.UploadUserCertificateRequest)
+	uploadRequest.SetName(cert.Name).SetCert(string(cert.FullChain)).SetKey(string(cert.Key))
 
 	// 5. 执行上传
 	result, err := client.UploadUserCertificate(uploadRequest)

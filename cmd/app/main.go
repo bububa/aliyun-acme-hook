@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"runtime"
 
@@ -18,6 +17,6 @@ func main() {
 	server := new(cli.App)
 	app.NewApp(server)
 	if err := server.RunContext(ctx, os.Args); err != nil {
-		log.Println(err)
+		os.Exit(1)
 	}
 }

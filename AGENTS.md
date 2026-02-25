@@ -1,7 +1,7 @@
 # Agent Development Guide for aliyun-acme-hook
 
 ## Project Overview
-This is a Go-based application that serves as an ACME (Automatic Certificate Management Environment) hook for Alibaba Cloud services, enabling automated SSL/TLS certificate management for domains using Alibaba Cloud's CDN, SLB (Server Load Balancer), and CAS (Certificate Authority Service).
+This is a Go-based application that serves as an ACME (Automatic Certificate Management Environment) hook for Alibaba Cloud services, enabling automated SSL/TLS certificate management for domains using Alibaba Cloud's CDN, SLB (Server Load Balancer), CAS (Certificate Authority Service), OSS (Object Storage Service), and FC (Function Compute).
 
 ## Build Commands
 ```bash
@@ -10,8 +10,8 @@ make app
 # or directly with Go
 go build -o dist/aliyun-acme-hook -ldflags="-s -w -extldflags \"-static\"" ./cmd/app
 
-# Full build and install
-make all
+# Build and install (requires both steps separately)
+make app && make install
 
 # Clean build artifacts
 make clean

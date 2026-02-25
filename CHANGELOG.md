@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.4.0] - 2026-02-25
+
+### Changed
+- ♻️ Refactored OSS certificate configuration handling to properly support both certificate ID references and certificate content
+
+### Fixed
+- 🐛 Fixed documentation to accurately reflect CLI options and supported services
+
+## [v1.3.0] - 2026-02-25
+
+### Added
+- ✨ Added FC (Function Compute) support for SSL certificate deployment to custom domains
+- ✨ Added FC API integration with certificate update functionality for custom domains
+- ✨ Enhanced deploy logic to support FC service deployment when configured
+
+### Changed
+- ♻️ Refactored deploy logic to iterate through all configured accounts and deploy certificates to each
+- ♻️ Updated documentation to reflect all supported services including FC
+
 ## [v1.2.0] - 2026-02-24
 
 ### Added

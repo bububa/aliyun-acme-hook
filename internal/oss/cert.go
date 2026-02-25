@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"strings"
 
 	"github.com/alibabacloud-go/tea/tea"
@@ -30,10 +31,14 @@ func Certificate(ctx context.Context, cfg *config.AliyunConfig, cert *model.Cert
 		}
 		// Print the bucket found
 		for _, b := range page.Buckets {
+			clt := client
 			if *b.Region != cfg.Region {
-				continue
+				ossCfg := oss.LoadDefaultConfig().
+					WithCredentialsProvider(credentials.NewStaticCredentialsProvider(cfg.AK, cfg.SK)).
+					WithRegion(*b.Region)
+				clt = oss.NewClient(ossCfg)
 			}
-			if err := certCname(ctx, client, cert, *b.Name); err != nil {
+			if err := certCname(ctx, clt, cert, *b.Name); err != nil {
 				slog.ErrorContext(ctx, "certificate OSS bucket domain failed", "error", err, "bucket", *b.Name)
 				return err
 			}
@@ -58,16 +63,21 @@ func certCname(ctx context.Context, clt *oss.Client, cert *model.Cert, bucketNam
 			slog.WarnContext(ctx, "cname custom domain is controled by CDN", "domain", *cname.Domain, "bucket", bucketName)
 			continue
 		}
+		certConfig := &oss.CertificateConfiguration{
+			Force: tea.Bool(true),
+		}
+		if cert.ID > 0 {
+			certConfig.CertId = tea.String(strconv.FormatInt(cert.ID, 10))
+		} else {
+			certConfig.Certificate = tea.String(string(cert.FullChain))
+			certConfig.PrivateKey = tea.String(string(cert.Key))
+		}
 		certReq := oss.PutCnameRequest{
 			Bucket: &bucketName,
 			BucketCnameConfiguration: &oss.BucketCnameConfiguration{
 				Cname: &oss.Cname{
-					Domain: cname.Domain,
-					CertificateConfiguration: &oss.CertificateConfiguration{
-						Certificate: tea.String(string(cert.FullChain)),
-						PrivateKey:  tea.String(string(cert.Key)),
-						Force:       tea.Bool(true),
-					},
+					Domain:                   cname.Domain,
+					CertificateConfiguration: certConfig,
 				},
 			},
 		}

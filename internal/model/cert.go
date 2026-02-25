@@ -67,8 +67,8 @@ func (c *Cert) validateDomain() error {
 	}
 
 	// Additional validation: ensure each label is not too long
-	labels := strings.Split(strings.TrimRight(c.Domain, "."), ".")
-	for _, label := range labels {
+	seq := strings.SplitSeq(strings.TrimRight(c.Domain, "."), ".")
+	for label := range seq {
 		if len(label) > 63 {
 			return fmt.Errorf("domain label too long: %s", label)
 		}

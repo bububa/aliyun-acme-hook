@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	slb "github.com/alibabacloud-go/slb-20140515/v4/client"
-	"github.com/alibabacloud-go/tea/tea"
 )
 
 type LSBListner struct {
@@ -26,15 +25,12 @@ func List(ctx context.Context, clt *slb.Client, domain string, regionID string) 
 	if pageSize <= 0 || pageSize > 1000 {
 		pageSize = 100 // Default to a reasonable value
 	}
-	listReq := slb.DescribeLoadBalancersRequest{
-		LoadBalancerStatus: tea.String("active"),
-		PageSize:           tea.Int32(pageSize),
-		RegionId:           tea.String(regionID),
-	}
+	listReq := new(slb.DescribeLoadBalancersRequest)
+	listReq.SetLoadBalancerStatus("active").SetPageSize(pageSize).SetRegionId(regionID)
 	ret := make([]LSBListner, 0, pageSize)
 	for {
-		listReq.PageNumber = tea.Int32(pageNumber)
-		resp, err := clt.DescribeLoadBalancers(&listReq)
+		listReq.SetPageNumber(pageNumber)
+		resp, err := clt.DescribeLoadBalancers(listReq)
 		if err != nil {
 			return nil, fmt.Errorf("get SLB instances list failed, %w", err)
 		}
@@ -65,10 +61,9 @@ func List(ctx context.Context, clt *slb.Client, domain string, regionID string) 
 }
 
 func checkSLB(ctx context.Context, clt *slb.Client, instanceID string, domain string) ([]LSBListner, error) {
-	attrReq := slb.DescribeLoadBalancerAttributeRequest{
-		LoadBalancerId: tea.String(instanceID),
-	}
-	attrResp, err := clt.DescribeLoadBalancerAttribute(&attrReq)
+	attrReq := new(slb.DescribeLoadBalancerAttributeRequest)
+	attrReq.SetLoadBalancerId(instanceID)
+	attrResp, err := clt.DescribeLoadBalancerAttribute(attrReq)
 	if err != nil {
 		return nil, fmt.Errorf("get SLB instance attribute failed, %w", err)
 	}
@@ -78,11 +73,10 @@ func checkSLB(ctx context.Context, clt *slb.Client, instanceID string, domain st
 	listners := make([]LSBListner, 0, len(attrResp.Body.ListenerPortsAndProtocal.ListenerPortAndProtocal))
 	for _, p := range attrResp.Body.ListenerPortsAndProtocal.ListenerPortAndProtocal {
 		if protocal := p.ListenerProtocal; protocal != nil && *protocal == "https" && p.ListenerPort != nil {
-			domainReq := slb.DescribeDomainExtensionsRequest{
-				LoadBalancerId: attrResp.Body.LoadBalancerId,
-				ListenerPort:   p.ListenerPort,
-			}
-			domainResp, err := clt.DescribeDomainExtensions(&domainReq)
+			domainReq := new(slb.DescribeDomainExtensionsRequest)
+			domainReq.LoadBalancerId = attrResp.Body.LoadBalancerId
+			domainReq.ListenerPort = p.ListenerPort
+			domainResp, err := clt.DescribeDomainExtensions(domainReq)
 			if err != nil {
 				return nil, fmt.Errorf("get SLB instance domain extensions failed, %w", err)
 			}
@@ -103,11 +97,10 @@ func checkSLB(ctx context.Context, clt *slb.Client, instanceID string, domain st
 					}
 				}
 			} else {
-				listenerDescribeReq := slb.DescribeLoadBalancerHTTPSListenerAttributeRequest{
-					LoadBalancerId: attrResp.Body.LoadBalancerId,
-					ListenerPort:   p.ListenerPort,
-				}
-				describeResp, err := clt.DescribeLoadBalancerHTTPSListenerAttribute(&listenerDescribeReq)
+				listenerDescribeReq := new(slb.DescribeLoadBalancerHTTPSListenerAttributeRequest)
+				listenerDescribeReq.LoadBalancerId = attrResp.Body.LoadBalancerId
+				listenerDescribeReq.ListenerPort = p.ListenerPort
+				describeResp, err := clt.DescribeLoadBalancerHTTPSListenerAttribute(listenerDescribeReq)
 				if err != nil {
 					return nil, fmt.Errorf("get SLB HTTPS listener attribute failed, %w", err)
 				}

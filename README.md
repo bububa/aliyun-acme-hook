@@ -117,6 +117,9 @@ You can also run the tool directly to update certificates:
 aliyun-acme-hook -c /etc/aliyun-acme-hook.toml certificate
 ```
 
+Options:
+- `-c, --config FILE`: Load configuration from FILE (required)
+
 This will:
 1. Load certificate information from environment variables (set by acme.sh)
 2. Upload the certificate to Alibaba Cloud CAS (Certificate Authority Service)
