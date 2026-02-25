@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"strings"
 
 	"github.com/alibabacloud-go/tea/tea"
@@ -62,16 +63,21 @@ func certCname(ctx context.Context, clt *oss.Client, cert *model.Cert, bucketNam
 			slog.WarnContext(ctx, "cname custom domain is controled by CDN", "domain", *cname.Domain, "bucket", bucketName)
 			continue
 		}
+		certConfig := &oss.CertificateConfiguration{
+			Force: tea.Bool(true),
+		}
+		if cert.ID > 0 {
+			certConfig.CertId = tea.String(strconv.FormatInt(cert.ID, 10))
+		} else {
+			certConfig.Certificate = tea.String(string(cert.FullChain))
+			certConfig.PrivateKey = tea.String(string(cert.Key))
+		}
 		certReq := oss.PutCnameRequest{
 			Bucket: &bucketName,
 			BucketCnameConfiguration: &oss.BucketCnameConfiguration{
 				Cname: &oss.Cname{
-					Domain: cname.Domain,
-					CertificateConfiguration: &oss.CertificateConfiguration{
-						Certificate: tea.String(string(cert.FullChain)),
-						PrivateKey:  tea.String(string(cert.Key)),
-						Force:       tea.Bool(true),
-					},
+					Domain:                   cname.Domain,
+					CertificateConfiguration: certConfig,
 				},
 			},
 		}
