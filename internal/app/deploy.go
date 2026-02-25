@@ -9,6 +9,7 @@ import (
 	"github.com/bububa/aliyun-acme-hook/config"
 	"github.com/bububa/aliyun-acme-hook/internal/cas"
 	"github.com/bububa/aliyun-acme-hook/internal/cdn"
+	"github.com/bububa/aliyun-acme-hook/internal/fc"
 	"github.com/bububa/aliyun-acme-hook/internal/model"
 	"github.com/bububa/aliyun-acme-hook/internal/oss"
 	"github.com/bububa/aliyun-acme-hook/internal/service"
@@ -60,6 +61,13 @@ func AccountDeploy(ctx context.Context, cfg *config.Account) error {
 			return err
 		}
 		slog.InfoContext(ctx, "updated SLB certification", "account", cfg.Name)
+	}
+	if cfg.FC != nil {
+		if err := fc.Certificate(ctx, cfg.FC, cert); err != nil {
+			slog.ErrorContext(ctx, "update FC certification failed", "account", cfg.Name, "error", err)
+			return err
+		}
+		slog.InfoContext(ctx, "updated FC certification", "account", cfg.Name)
 	}
 	slog.InfoContext(ctx, "DEPLOYED", "account", cfg.Name)
 	return nil
